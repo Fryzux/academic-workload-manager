@@ -13,6 +13,11 @@ venv/
 .venv/
 env/
 
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
 # IDE and editors
 .idea/
 .vscode/
