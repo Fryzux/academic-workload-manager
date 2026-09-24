@@ -2,31 +2,34 @@
   {
     "id": 1,
     "teacher_id": 1,
-    "discipline": "Архитектура программных систем",
+    "discipline_id": 1,
     "lectures": 120.0,
     "practices": 240.0,
     "labs": 360.0,
     "exams": 175.0,
-    "total_hours": 895.0
+    "total_hours": 895.0,
+    "is_cancelled": false
   },
   {
     "id": 2,
     "teacher_id": 2,
-    "discipline": "Базы данных и экспертные системы",
+    "discipline_id": 2,
     "lectures": 60.0,
     "practices": 120.0,
     "labs": 200.0,
     "exams": 70.0,
-    "total_hours": 450.0
+    "total_hours": 450.0,
+    "is_cancelled": false
   },
   {
     "id": 3,
     "teacher_id": 3,
-    "discipline": "Криптографические методы защиты информации",
+    "discipline_id": 3,
     "lectures": 150.0,
     "practices": 250.0,
     "labs": 380.0,
     "exams": 180.0,
-    "total_hours": 960.0
+    "total_hours": 960.0,
+    "is_cancelled": false
   }
 ]
