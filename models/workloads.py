@@ -158,6 +158,17 @@ def create_workload(
     return workload
 
 
+def find_workload_by_id(
+    workloads: list[Workload],
+    workload_id: int,
+) -> Optional[Workload]:
+    """Найти учебное поручение по идентификатору."""
+    for w in workloads:
+        if w.id == workload_id:
+            return w
+    return None
+
+
 def cancel_workload(workloads: list[Workload], workload_id: int) -> bool:
     """Отменить учебное поручение через его метод cancel()."""
     for w in workloads:

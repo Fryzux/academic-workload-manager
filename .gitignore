@@ -24,3 +24,5 @@ Thumbs.db
 Desktop.ini
 
 *.docx
+*.sqlite3
+db.sqlite3
