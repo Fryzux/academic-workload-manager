@@ -19,7 +19,7 @@
     "labs": 200.0,
     "exams": 70.0,
     "total_hours": 450.0,
-    "is_cancelled": false
+    "is_cancelled": true
   },
   {
     "id": 3,
@@ -30,6 +30,17 @@
     "labs": 380.0,
     "exams": 180.0,
     "total_hours": 960.0,
+    "is_cancelled": false
+  },
+  {
+    "id": 4,
+    "teacher_id": 2,
+    "discipline_id": 5,
+    "lectures": 12.0,
+    "practices": 0.0,
+    "labs": 0.0,
+    "exams": 3.0,
+    "total_hours": 15.0,
     "is_cancelled": false
   }
 ]
