@@ -39,15 +39,49 @@ def _compliance_badge(status: str) -> str:
 
 
 def teachers(request: HttpRequest) -> HttpResponse:
-    """Отобразить список преподавателей кафедры."""
+    """Отобразить список преподавателей с фильтрацией и поиском."""
     teachers_list, _, workloads = _load_data()
 
+    query = request.GET.get("q", "").strip().lower()
+    comp_filter = request.GET.get("compliance", "all").strip().lower()
+
+    filtered_teachers = teachers_list
+    if query:
+        filtered_teachers = [
+            t for t in filtered_teachers
+            if query in t.name.lower() or query in t.department.lower()
+        ]
+
     rows = []
+    count_norm = 0
+    count_under = 0
+    count_over = 0
+
     for t in teachers_list:
         total = get_teacher_total_hours(workloads, t.id)
         norm = t.calculate_planned_hours()
         comp = check_workload_compliance(total, norm)
+        if "Соответствует" in comp:
+            count_norm += 1
+        elif "Недогрузка" in comp:
+            count_under += 1
+        else:
+            count_over += 1
+
+    for t in filtered_teachers:
+        total = get_teacher_total_hours(workloads, t.id)
+        norm = t.calculate_planned_hours()
+        comp = check_workload_compliance(total, norm)
+
+        if comp_filter == "norm" and "Соответствует" not in comp:
+            continue
+        if comp_filter == "underload" and "Недогрузка" not in comp:
+            continue
+        if comp_filter == "overload" and "Перегрузка" not in comp:
+            continue
+
         badge = _compliance_badge(comp)
+        pct = calculate_plan_fulfillment_percent(total, norm)
         rows.append(f"""
         <tr>
           <td class="text-center">{t.id}</td>
@@ -59,7 +93,10 @@ def teachers(request: HttpRequest) -> HttpResponse:
           <td>{t.position}</td>
           <td>{t.department}</td>
           <td class="text-center">{t.rate:.2f}</td>
-          <td class="text-end">{total:.1f} / {norm:.1f} ч</td>
+          <td class="text-end">
+            <div>{total:.1f} / {norm:.1f} ч</div>
+            <div class="small text-muted">{pct:.1f}%</div>
+          </td>
           <td class="text-center">{badge}</td>
           <td class="text-center">
             <a href="/teachers/{t.id}/"
@@ -71,30 +108,70 @@ def teachers(request: HttpRequest) -> HttpResponse:
         """)
 
     table_rows = "".join(rows) if rows else """
-    <tr><td colspan="8" class="text-center py-4">Список пуст</td></tr>
+    <tr><td colspan="8" class="text-center py-4 text-muted">
+      Преподаватели по заданным критериям не найдены
+    </td></tr>
     """
 
     content = f"""
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <h2 class="h3 fw-bold mb-0">Преподаватели кафедры</h2>
-      <span class="badge bg-primary fs-6">
-        Всего: {len(teachers_list)}
-      </span>
+      <div>
+        <h2 class="h3 fw-bold mb-0">Преподаватели кафедры</h2>
+        <div class="text-muted small">
+          Штатный состав и учет выполнения годовых норм
+        </div>
+      </div>
+      <div class="btn-group">
+        <a href="/teachers/?compliance=all"
+           class="btn btn-outline-secondary btn-sm
+           {'active' if comp_filter == 'all' else ''}">
+          Все ({len(teachers_list)})
+        </a>
+        <a href="/teachers/?compliance=norm"
+           class="btn btn-outline-success btn-sm
+           {'active' if comp_filter == 'norm' else ''}">
+          В норме ({count_norm})
+        </a>
+        <a href="/teachers/?compliance=underload"
+           class="btn btn-outline-warning btn-sm
+           {'active' if comp_filter == 'underload' else ''}">
+          Недогрузка ({count_under})
+        </a>
+        <a href="/teachers/?compliance=overload"
+           class="btn btn-outline-danger btn-sm
+           {'active' if comp_filter == 'overload' else ''}">
+          Перегрузка ({count_over})
+        </a>
+      </div>
     </div>
+
+    <form method="get" action="/teachers/" class="row g-2 mb-3">
+      <div class="col-md-5">
+        <input type="text" name="q" value="{query}"
+               class="form-control form-control-sm"
+               placeholder="Поиск по ФИО преподавателя или кафедре...">
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-primary btn-sm">Найти</button>
+        <a href="/teachers/" class="btn btn-outline-secondary btn-sm">
+          Сброс
+        </a>
+      </div>
+    </form>
 
     <div class="card shadow-sm border-0">
       <div class="table-responsive">
         <table class="table table-hover table-striped align-middle mb-0">
           <thead class="table-dark">
             <tr>
-              <th class="text-center" style="width: 50px;">ID</th>
+              <th class="text-center" style="width: 45px;">ID</th>
               <th>ФИО преподавателя</th>
               <th>Должность</th>
               <th>Кафедра</th>
               <th class="text-center">Ставка</th>
               <th class="text-end">Факт / План</th>
               <th class="text-center">Статус нормы</th>
-              <th class="text-center" style="width: 120px;">Действие</th>
+              <th class="text-center" style="width: 110px;">Действие</th>
             </tr>
           </thead>
           <tbody>
@@ -108,7 +185,7 @@ def teachers(request: HttpRequest) -> HttpResponse:
 
 
 def teacher_detail(request: HttpRequest, teacher_id: int) -> HttpResponse:
-    """Отобразить детальную карточку нагрузки преподавателя."""
+    """Отобразить детальную карточку нагрузки с прогресс-баром."""
     teachers_list, _, workloads = _load_data()
     teacher = find_teacher_by_id(teachers_list, teacher_id)
     if not teacher:
@@ -126,12 +203,34 @@ def teacher_detail(request: HttpRequest, teacher_id: int) -> HttpResponse:
     )
     badge = _compliance_badge(compliance)
 
+    bar_color = "bg-success"
+    if "Недогрузка" in compliance:
+        bar_color = "bg-warning"
+    elif "Перегрузка" in compliance:
+        bar_color = "bg-danger"
+
+    diff_hours = total_hours - planned_hours
+    if diff_hours >= 0:
+        diff_sign = f"+{diff_hours:.1f}"
+    else:
+        diff_sign = f"{diff_hours:.1f}"
+
     w_rows = []
     for w in t_workloads:
         w_status = (
             '<span class="badge bg-secondary">Отменено</span>'
             if w.is_cancelled
             else '<span class="badge bg-success">Активно</span>'
+        )
+        toggle_link = (
+            f"/workloads/{w.id}/toggle/?next=/teachers/{teacher.id}/"
+        )
+        toggle_btn = (
+            f'<a href="{toggle_link}" '
+            f'class="btn btn-sm btn-outline-success">Восстановить</a>'
+            if w.is_cancelled
+            else f'<a href="{toggle_link}" '
+            f'class="btn btn-sm btn-outline-danger">Отменить</a>'
         )
         w_rows.append(f"""
         <tr class="{'table-light text-muted' if w.is_cancelled else ''}">
@@ -154,12 +253,19 @@ def teacher_detail(request: HttpRequest, teacher_id: int) -> HttpResponse:
           <td class="text-center">{w.exams:.1f}</td>
           <td class="text-end fw-bold">{w.total_hours:.1f} ч</td>
           <td class="text-center">{w_status}</td>
+          <td class="text-center">
+            <div class="btn-group btn-group-sm">
+              <a href="/workloads/{w.id}/"
+                 class="btn btn-outline-primary">Инфо</a>
+              {toggle_btn}
+            </div>
+          </td>
         </tr>
         """)
 
     workloads_table = "".join(w_rows) if w_rows else """
     <tr>
-      <td colspan="8" class="text-center py-3 text-muted">
+      <td colspan="9" class="text-center py-3 text-muted">
         Учебные поручения не закреплены
       </td>
     </tr>
@@ -180,55 +286,67 @@ def teacher_detail(request: HttpRequest, teacher_id: int) -> HttpResponse:
         </div>
       </div>
       <div class="card-body">
-        <div class="row g-3">
+        <div class="row g-3 text-center text-md-start">
           <div class="col-md-3 col-6">
             <div class="text-muted small">Ставка по договору</div>
-            <div class="fs-5 fw-bold">{teacher.rate:.2f} ст.</div>
+            <div class="fs-4 fw-bold">{teacher.rate:.2f} ст.</div>
           </div>
           <div class="col-md-3 col-6">
-            <div class="text-muted small">Норма часов в год</div>
-            <div class="fs-5 fw-bold">{planned_hours:.1f} ч</div>
+            <div class="text-muted small">Годовая норма</div>
+            <div class="fs-4 fw-bold">{planned_hours:.1f} ч</div>
           </div>
           <div class="col-md-3 col-6">
             <div class="text-muted small">Фактическая нагрузка</div>
-            <div class="fs-5 fw-bold text-primary">
+            <div class="fs-4 fw-bold text-primary">
               {total_hours:.1f} ч
             </div>
           </div>
           <div class="col-md-3 col-6">
             <div class="text-muted small">Фактическая ставка</div>
-            <div class="fs-5 fw-bold">{actual_rate:.2f} ст.</div>
+            <div class="fs-4 fw-bold">{actual_rate:.2f} ст.</div>
           </div>
         </div>
 
         <hr>
 
-        <div class="d-flex align-items-center gap-3">
-          <div>
-            <span class="text-muted small d-block">
-              Выполнение плана:
-            </span>
-            <span class="fs-5 fw-bold">{fulfillment:.1f} %</span>
+        <div class="mb-2 d-flex justify-content-between align-items-center">
+          <span class="fw-bold small text-muted">
+            Выполнение индивидуального плана ({fulfillment:.1f}%):
+          </span>
+          <span class="small text-muted">
+            Отклонение от нормы: <strong>{diff_sign} ч</strong>
+          </span>
+        </div>
+        <div class="progress mb-3" style="height: 22px;">
+          <div class="progress-bar {bar_color} progress-bar-striped"
+               role="progressbar"
+               style="width: {min(fulfillment, 100):.1f}%;">
+            {fulfillment:.1f}%
           </div>
-          <div class="ms-auto text-end">
-            <span class="text-muted small d-block">
-              Статус проверки нагрузки:
-            </span>
-            <div class="mt-1">{badge}</div>
-          </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="text-muted small">
+            Статус соответствия норме нагрузки:
+          </span>
+          <div>{badge}</div>
         </div>
       </div>
     </div>
 
     <div class="card shadow-sm border-0">
-      <div class="card-header bg-white py-3">
+      <div class="card-header bg-white py-3
+                  d-flex justify-content-between align-items-center">
         <h4 class="h5 mb-0 fw-bold">Закрепленные учебные поручения</h4>
+        <span class="badge bg-secondary">
+          Всего поручений: {len(t_workloads)}
+        </span>
       </div>
       <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
           <thead class="table-light">
             <tr>
-              <th class="text-center" style="width: 60px;">ID</th>
+              <th class="text-center" style="width: 50px;">ID</th>
               <th>Дисциплина</th>
               <th class="text-center">Лек.</th>
               <th class="text-center">Прак.</th>
@@ -236,6 +354,7 @@ def teacher_detail(request: HttpRequest, teacher_id: int) -> HttpResponse:
               <th class="text-center">Экз.</th>
               <th class="text-end">Итого</th>
               <th class="text-center">Статус</th>
+              <th class="text-center" style="width: 170px;">Действие</th>
             </tr>
           </thead>
           <tbody>

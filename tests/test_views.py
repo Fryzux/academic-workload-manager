@@ -108,3 +108,44 @@ def test_find_workload_by_id():
 
     not_found = find_workload_by_id(items, 999)
     assert not_found is None
+
+
+def test_teachers_search_and_filter():
+    """Поиск преподавателя по ФИО и фильтрация по соответствию норме."""
+    client = Client()
+    resp_q = client.get("/teachers/?q=Иванов")
+    assert resp_q.status_code == 200
+    assert "Иванов" in resp_q.content.decode("utf-8")
+
+    resp_comp = client.get("/teachers/?compliance=norm")
+    assert resp_comp.status_code == 200
+
+
+def test_workloads_filter_and_search():
+    """Фильтрация поручений по статусу и строке поиска."""
+    client = Client()
+    resp_active = client.get("/workloads/?status=active")
+    assert resp_active.status_code == 200
+
+    resp_canc = client.get("/workloads/?status=cancelled")
+    assert resp_canc.status_code == 200
+
+    resp_search = client.get("/workloads/?q=Иванов")
+    assert resp_search.status_code == 200
+
+
+def test_workload_toggle_action_and_404():
+    """Переключение активности поручения и проверка 404 на несуществующем."""
+    client = Client()
+    # 404 на несуществующем ID
+    resp_404 = client.get("/workloads/999/toggle/")
+    assert resp_404.status_code == 404
+
+    # Успешный редирект при переключении существующего
+    resp_toggle = client.get("/workloads/1/toggle/")
+    assert resp_toggle.status_code == 302
+    assert "/workloads/1/" in resp_toggle.headers["Location"]
+
+    # Возврат статуса обратно
+    resp_restore = client.get("/workloads/1/toggle/")
+    assert resp_restore.status_code == 302
