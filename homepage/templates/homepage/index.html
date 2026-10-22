@@ -18,8 +18,14 @@
       <a href="{% url 'disciplines:list' %}" class="btn btn-outline-primary btn-lg px-4">
         Учебные дисциплины
       </a>
+      <a href="{% url 'disciplines:available' %}" class="btn btn-outline-info btn-lg px-4">
+        Свободные дисциплины
+      </a>
       <a href="{% url 'workloads:list' %}" class="btn btn-outline-secondary btn-lg px-4">
         Учебные поручения
+      </a>
+      <a href="{% url 'workloads:statistics' %}" class="btn btn-success btn-lg px-4">
+        Статистика (SQL)
       </a>
     </div>
   </div>

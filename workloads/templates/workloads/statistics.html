@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Статистика и аналитика нагрузки — SQLite SQL{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h2 class="h3 fw-bold mb-0">Сводная статистика учебной нагрузки</h2>
+    <p class="text-muted small mb-0">
+      Аналитические показатели, агрегации (COUNT, SUM, AVG) и группировка (GROUP BY / HAVING) из SQLite
+    </p>
+  </div>
+  <a href="{% url 'workloads:list' %}" class="btn btn-outline-secondary btn-sm">
+    &larr; К списку поручений
+  </a>
+</div>
+
+<!-- 1. Сводные карточки агрегатов -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card shadow-sm border-0 border-start border-primary border-4">
+      <div class="card-body">
+        <div class="text-muted small text-uppercase fw-semibold">Активных поручений</div>
+        <div class="h2 fw-bold text-primary mb-0">{{ summary.total_workloads|default:"0" }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card shadow-sm border-0 border-start border-success border-4">
+      <div class="card-body">
+        <div class="text-muted small text-uppercase fw-semibold">Преподавателей в работе</div>
+        <div class="h2 fw-bold text-success mb-0">{{ summary.active_teachers|default:"0" }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card shadow-sm border-0 border-start border-info border-4">
+      <div class="card-body">
+        <div class="text-muted small text-uppercase fw-semibold">Суммарно часов</div>
+        <div class="h2 fw-bold text-info mb-0">{{ summary.sum_hours|default:"0"|floatformat:1 }} ч</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card shadow-sm border-0 border-start border-warning border-4">
+      <div class="card-body">
+        <div class="text-muted small text-uppercase fw-semibold">Средняя нагрузка</div>
+        <div class="h2 fw-bold text-warning mb-0">{{ summary.avg_hours|default:"0"|floatformat:1 }} ч</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 2. Распределение по преподавателям (GROUP BY) -->
+<div class="card shadow-sm border-0 mb-4">
+  <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+    <span class="fw-semibold">Распределение нагрузки по преподавателям (GROUP BY + LEFT JOIN)</span>
+    <span class="badge bg-light text-dark">{{ teachers_stats|length }} преподавателей</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Преподаватель</th>
+          <th>Должность</th>
+          <th class="text-center">Ставка</th>
+          <th class="text-end">План</th>
+          <th class="text-center">Поручений</th>
+          <th class="text-end">Факт (SQL SUM)</th>
+          <th class="text-center">Баланс часов</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in teachers_stats %}
+          <tr>
+            <td class="fw-semibold">
+              <a href="{% url 'teachers:detail' row.id %}" class="text-decoration-none">
+                {{ row.teacher_name }}
+              </a>
+            </td>
+            <td class="text-muted small">{{ row.position }}</td>
+            <td class="text-center">
+              <span class="badge bg-secondary">{{ row.rate|floatformat:2 }}</span>
+            </td>
+            <td class="text-end">{{ row.planned_hours|floatformat:1 }} ч</td>
+            <td class="text-center">
+              <span class="badge bg-primary rounded-pill">{{ row.assignments_count }}</span>
+            </td>
+            <td class="text-end fw-bold">{{ row.assigned_hours|floatformat:1 }} ч</td>
+            <td class="text-center">
+              {% if row.assigned_hours >= row.planned_hours %}
+                <span class="badge bg-success">Выполнено</span>
+              {% else %}
+                <span class="badge bg-warning text-dark">
+                  Остаток: {{ row.planned_hours|add:"0" }} ч
+                </span>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7" class="text-center py-4 text-muted">
+              Нет данных о преподавателях.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 3. Нагрузка по семестрам (GROUP BY) -->
+<div class="card shadow-sm border-0">
+  <div class="card-header bg-dark text-white">
+    <span class="fw-semibold">Распределение нагрузки кафедры по семестрам (JOIN + GROUP BY)</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th class="text-center" style="width: 120px;">Семестр</th>
+          <th class="text-center">Количество поручений</th>
+          <th class="text-end">Суммарный объем часов</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sem in semester_stats %}
+          <tr>
+            <td class="text-center fw-bold">
+              <span class="badge bg-primary">{{ sem.semester }} семестр</span>
+            </td>
+            <td class="text-center">{{ sem.assignments_count }}</td>
+            <td class="text-end fw-bold">{{ sem.semester_hours|floatformat:1 }} ч</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="3" class="text-center py-4 text-muted">
+              Нет активных поручений для группировки по семестрам.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -6,6 +6,7 @@ from django.conf import settings
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
+from db.database import get_connection
 from models.disciplines import add_discipline, find_discipline_by_id
 from storage import (
     load_disciplines,
@@ -144,6 +145,25 @@ def discipline_add(request: HttpRequest) -> HttpResponse:
                 semester=sem_val,
             )
             save_disciplines(d_path, disciplines_list_data)
+
+            # Синхронизация с базой SQLite
+            conn = get_connection()
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO disciplines (
+                    id, name, department, semester
+                ) VALUES (?, ?, ?, ?)
+                """,
+                [
+                    new_disc.id,
+                    new_disc.name,
+                    new_disc.department,
+                    new_disc.semester,
+                ],
+            )
+            conn.commit()
+            conn.close()
+
             return HttpResponseRedirect(f"/disciplines/{new_disc.id}/")
 
     context = {
@@ -156,4 +176,46 @@ def discipline_add(request: HttpRequest) -> HttpResponse:
         request,
         "disciplines/discipline_form.html",
         context,
+    )
+
+
+def available_disciplines(request: HttpRequest) -> HttpResponse:
+    """Поиск нераспределенных дисциплин по семестру (подзапрос NOT IN)."""
+    semester = request.GET.get("semester", "").strip()
+    conn = get_connection()
+    if semester and semester.isdigit():
+        disciplines_data = conn.execute(
+            """
+            SELECT id, name, department, semester
+            FROM disciplines
+            WHERE id NOT IN (
+                SELECT discipline_id
+                FROM workloads
+                WHERE is_cancelled = 0
+            ) AND semester = ?
+            ORDER BY semester ASC, name ASC;
+            """,
+            [int(semester)],
+        ).fetchall()
+    else:
+        disciplines_data = conn.execute(
+            """
+            SELECT id, name, department, semester
+            FROM disciplines
+            WHERE id NOT IN (
+                SELECT discipline_id
+                FROM workloads
+                WHERE is_cancelled = 0
+            )
+            ORDER BY semester ASC, name ASC;
+            """
+        ).fetchall()
+    conn.close()
+    return render(
+        request,
+        "disciplines/available.html",
+        {
+            "disciplines": disciplines_data,
+            "semester": semester,
+        },
     )

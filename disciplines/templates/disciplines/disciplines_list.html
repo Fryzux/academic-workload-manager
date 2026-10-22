@@ -10,9 +10,14 @@
       Всего дисциплин: {{ disc_items|length }}
     </p>
   </div>
-  <a href="{% url 'disciplines:add' %}" class="btn btn-primary btn-sm">
-    + Добавить дисциплину
-  </a>
+  <div class="d-flex gap-2">
+    <a href="{% url 'disciplines:available' %}" class="btn btn-outline-info btn-sm">
+      Свободные дисциплины
+    </a>
+    <a href="{% url 'disciplines:add' %}" class="btn btn-primary btn-sm">
+      + Добавить дисциплину
+    </a>
+  </div>
 </div>
 
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">

@@ -6,6 +6,7 @@ from django.conf import settings
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
+from db.database import get_connection
 from models.teachers import add_teacher, find_teacher_by_id
 from models.workloads import (
     calculate_actual_rate,
@@ -205,6 +206,26 @@ def teacher_add(request: HttpRequest) -> HttpResponse:
                 rate=rate_val,
             )
             save_teachers(t_path, teachers_list)
+
+            # Синхронизация с SQLite
+            conn = get_connection()
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO teachers (
+                    id, name, position, department, rate
+                ) VALUES (?, ?, ?, ?, ?)
+                """,
+                [
+                    new_teacher.id,
+                    new_teacher.name,
+                    new_teacher.position,
+                    new_teacher.department,
+                    new_teacher.rate,
+                ],
+            )
+            conn.commit()
+            conn.close()
+
             return HttpResponseRedirect(f"/teachers/{new_teacher.id}/")
 
     context = {

@@ -10,6 +10,7 @@ app_name = "workloads"
 urlpatterns = [
     path("", views.workloads, name="list"),
     path("", views.workloads, name="workloads"),
+    path("statistics/", views.statistics, name="statistics"),
     path("<int:workload_id>/", views.workload_detail, name="detail"),
     path("<int:workload_id>/", views.workload_detail, name="workload_detail"),
     path(
