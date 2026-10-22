@@ -3,9 +3,10 @@
 """
 
 from django.conf import settings
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.views.decorators.csrf import csrf_exempt
 from homepage.views import page, page_not_found
-from models.teachers import find_teacher_by_id
+from models.teachers import add_teacher, find_teacher_by_id
 from models.workloads import (
     calculate_actual_rate,
     calculate_plan_fulfillment_percent,
@@ -13,7 +14,12 @@ from models.workloads import (
     get_teacher_total_hours,
     get_teacher_workloads,
 )
-from storage import load_disciplines, load_teachers, load_workloads
+from storage import (
+    load_disciplines,
+    load_teachers,
+    load_workloads,
+    save_teachers,
+)
 
 
 def _load_data():
@@ -121,27 +127,32 @@ def teachers(request: HttpRequest) -> HttpResponse:
           Штатный состав и учет выполнения годовых норм
         </div>
       </div>
-      <div class="btn-group">
-        <a href="/teachers/?compliance=all"
-           class="btn btn-outline-secondary btn-sm
-           {'active' if comp_filter == 'all' else ''}">
-          Все ({len(teachers_list)})
+      <div>
+        <a href="/teachers/add/" class="btn btn-success btn-sm me-2">
+          <span class="fw-bold">+</span> Добавить преподавателя
         </a>
-        <a href="/teachers/?compliance=norm"
-           class="btn btn-outline-success btn-sm
-           {'active' if comp_filter == 'norm' else ''}">
-          В норме ({count_norm})
-        </a>
-        <a href="/teachers/?compliance=underload"
-           class="btn btn-outline-warning btn-sm
-           {'active' if comp_filter == 'underload' else ''}">
-          Недогрузка ({count_under})
-        </a>
-        <a href="/teachers/?compliance=overload"
-           class="btn btn-outline-danger btn-sm
-           {'active' if comp_filter == 'overload' else ''}">
-          Перегрузка ({count_over})
-        </a>
+        <div class="btn-group">
+          <a href="/teachers/?compliance=all"
+             class="btn btn-outline-secondary btn-sm
+             {'active' if comp_filter == 'all' else ''}">
+            Все ({len(teachers_list)})
+          </a>
+          <a href="/teachers/?compliance=norm"
+             class="btn btn-outline-success btn-sm
+             {'active' if comp_filter == 'norm' else ''}">
+            В норме ({count_norm})
+          </a>
+          <a href="/teachers/?compliance=underload"
+             class="btn btn-outline-warning btn-sm
+             {'active' if comp_filter == 'underload' else ''}">
+            Недогрузка ({count_under})
+          </a>
+          <a href="/teachers/?compliance=overload"
+             class="btn btn-outline-danger btn-sm
+             {'active' if comp_filter == 'overload' else ''}">
+            Перегрузка ({count_over})
+          </a>
+        </div>
       </div>
     </div>
 
@@ -365,3 +376,129 @@ def teacher_detail(request: HttpRequest, teacher_id: int) -> HttpResponse:
     </div>
     """
     return HttpResponse(page(f"Преподаватель: {teacher.name}", content))
+
+
+@csrf_exempt
+def teacher_add(request: HttpRequest) -> HttpResponse:
+    """Форма и обработка добавления нового преподавателя."""
+    error = ""
+    name = ""
+    position = "Доцент"
+    department = "Индустриального программирования"
+    rate_str = "1.0"
+
+    if request.method == "POST":
+        name = request.POST.get("name", "").strip()
+        position = request.POST.get("position", "").strip()
+        department = request.POST.get("department", "").strip()
+        rate_str = request.POST.get("rate", "1.0").strip()
+
+        if not name:
+            error = "Укажите ФИО преподавателя."
+        elif not position:
+            error = "Укажите должность преподавателя."
+        elif not department:
+            error = "Укажите кафедру."
+        else:
+            try:
+                rate_val = float(rate_str)
+                if not (0.1 <= rate_val <= 2.0):
+                    error = "Ставка должна быть в диапазоне от 0.1 до 2.0."
+            except ValueError:
+                error = "Некорректное числовое значение ставки."
+
+        if not error:
+            base = settings.BASE_DIR
+            t_path = str(base / "data" / "teachers.json")
+            teachers_list = load_teachers(t_path)
+            new_teacher = add_teacher(
+                teachers=teachers_list,
+                name=name,
+                position=position,
+                department=department,
+                rate=rate_val,
+            )
+            save_teachers(t_path, teachers_list)
+            return HttpResponseRedirect(f"/teachers/{new_teacher.id}/")
+
+    error_alert = (
+        f'<div class="alert alert-danger shadow-sm mb-4">{error}</div>'
+        if error
+        else ""
+    )
+
+    positions = ["Профессор", "Доцент", "Старший преподаватель", "Ассистент"]
+    opts = []
+    for p in positions:
+        sel = "selected" if p == position else ""
+        opts.append(f'<option value="{p}" {sel}>{p}</option>')
+    pos_options = "".join(opts)
+
+    content = f"""
+    <div class="row justify-content-center">
+      <div class="col-md-7">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h2 class="h3 fw-bold mb-0">Добавление преподавателя</h2>
+          <a href="/teachers/" class="btn btn-outline-secondary btn-sm">
+            ← Назад к списку
+          </a>
+        </div>
+
+        {error_alert}
+
+        <div class="card shadow-sm border-0">
+          <div class="card-body p-4">
+            <form method="post" action="/teachers/add/">
+              <div class="mb-3">
+                <label for="name" class="form-label fw-bold">
+                  ФИО преподавателя <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" id="name" name="name"
+                       value="{name}" placeholder="например: Смирнов А. П."
+                       required autofocus>
+              </div>
+
+              <div class="mb-3">
+                <label for="position" class="form-label fw-bold">
+                  Должность <span class="text-danger">*</span>
+                </label>
+                <select class="form-select" id="position" name="position">
+                  {pos_options}
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label for="department" class="form-label fw-bold">
+                  Кафедра <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" id="department"
+                       name="department" value="{department}" required>
+              </div>
+
+              <div class="mb-4">
+                <label for="rate" class="form-label fw-bold">
+                  Доля ставки по договору (0.1 - 2.0)
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="number" class="form-control" id="rate" name="rate"
+                       step="0.05" min="0.1" max="2.0" value="{rate_str}"
+                       required>
+                <div class="form-text">
+                  При ставке 1.0 норма составляет 900.0 часов в год.
+                </div>
+              </div>
+
+              <div class="d-flex gap-2 justify-content-end">
+                <a href="/teachers/"
+                   class="btn btn-outline-secondary">Отмена</a>
+                <button type="submit" class="btn btn-success px-4">
+                  Сохранить преподавателя
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+    return HttpResponse(page("Добавление преподавателя", content))

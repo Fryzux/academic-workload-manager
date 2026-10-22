@@ -149,3 +149,39 @@ def test_workload_toggle_action_and_404():
     # Возврат статуса обратно
     resp_restore = client.get("/workloads/1/toggle/")
     assert resp_restore.status_code == 302
+
+
+def test_teacher_add_get_and_post():
+    """Проверка формы добавления преподавателя и сохранения данных."""
+    client = Client()
+    resp_get = client.get("/teachers/add/")
+    assert resp_get.status_code == 200
+    assert "Добавление преподавателя" in resp_get.content.decode("utf-8")
+
+    # Валидация при пустом ФИО
+    resp_empty = client.post("/teachers/add/", {
+        "name": "",
+        "position": "Доцент",
+        "department": "ИП",
+        "rate": "1.0",
+    })
+    assert resp_empty.status_code == 200
+    assert "Укажите ФИО" in resp_empty.content.decode("utf-8")
+
+
+def test_disciplines_views_and_add():
+    """Проверка списка дисциплин, карточки и добавления."""
+    client = Client()
+    resp_list = client.get("/disciplines/")
+    assert resp_list.status_code == 200
+    assert "Учебные предметы и дисциплины" in resp_list.content.decode("utf-8")
+
+    resp_detail = client.get("/disciplines/1/")
+    assert resp_detail.status_code == 200
+
+    resp_404 = client.get("/disciplines/999/")
+    assert resp_404.status_code == 404
+
+    resp_add_get = client.get("/disciplines/add/")
+    assert resp_add_get.status_code == 200
+    assert "Добавление предмета" in resp_add_get.content.decode("utf-8")

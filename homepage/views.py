@@ -81,6 +81,7 @@ def page(title: str, content: str) -> str:
       <div class="navbar-nav">
         <a class="nav-link" href="/">Главная</a>
         <a class="nav-link" href="/teachers/">Преподаватели</a>
+        <a class="nav-link" href="/disciplines/">Предметы</a>
         <a class="nav-link" href="/workloads/">Поручения</a>
       </div>
     </div>
@@ -111,9 +112,12 @@ def index(request: HttpRequest) -> HttpResponse:
           академических часов, анализа выполнения индивидуальных норм
           и проверки соответствия занимаемым ставкам.
         </p>
-        <div class="d-flex gap-2 mt-4">
+        <div class="d-flex flex-wrap gap-2 mt-4">
           <a href="/teachers/" class="btn btn-primary btn-lg px-4">
             Преподаватели
+          </a>
+          <a href="/disciplines/" class="btn btn-outline-primary btn-lg px-4">
+            Предметы
           </a>
           <a href="/workloads/" class="btn btn-outline-secondary btn-lg px-4">
             Учебные поручения
@@ -241,6 +245,9 @@ def page_not_found(request: HttpRequest, exception=None) -> HttpResponse:
           <a href="/" class="btn btn-primary me-2">На главную</a>
           <a href="/teachers/" class="btn btn-outline-secondary me-2">
             Преподаватели
+          </a>
+          <a href="/disciplines/" class="btn btn-outline-secondary me-2">
+            Предметы
           </a>
           <a href="/workloads/" class="btn btn-outline-secondary">
             Поручения

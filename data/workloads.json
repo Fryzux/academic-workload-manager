@@ -41,6 +41,6 @@
     "labs": 0.0,
     "exams": 3.0,
     "total_hours": 15.0,
-    "is_cancelled": false
+    "is_cancelled": true
   }
 ]
