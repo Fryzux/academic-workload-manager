@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}
+  {% if workload %}
+    Поручение #{{ workload.id }}: {{ workload.discipline.name|default:"Без названия" }} — Учет нагрузки
+  {% else %}
+    Поручение не найдено
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="mb-3 d-flex justify-content-between">
+  <a href="{% url 'workloads:list' %}" class="btn btn-outline-secondary btn-sm">
+    &larr; Назад к списку поручений
+  </a>
+  {% if workload %}
+  <div>
+    {% if workload.is_cancelled %}
+      <a href="{% url 'workloads:toggle' workload.id %}" class="btn btn-success btn-sm">
+        Восстановить поручение
+      </a>
+    {% else %}
+      <a href="{% url 'workloads:toggle' workload.id %}" class="btn btn-outline-danger btn-sm">
+        Отменить поручение
+      </a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+{% if workload %}
+<div class="card shadow-sm border-0 mb-4">
+  <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+    <div>
+      <h3 class="h4 mb-0 fw-bold">
+        Поручение #{{ workload.id }}: {{ workload.discipline.name }}
+      </h3>
+      <div class="small text-light opacity-75">
+        Семестр: {{ workload.discipline.semester }}
+      </div>
+    </div>
+    <div>
+      {% include "workloads/includes/workload_status.html" %}
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="row g-4">
+      <div class="col-md-6">
+        <h5 class="fw-bold text-secondary">Закрепленный преподаватель</h5>
+        <div class="p-3 bg-light rounded border">
+          <div class="fs-5 fw-bold">
+            <a href="{% url 'teachers:detail' workload.teacher.id %}" class="text-decoration-none">
+              {{ workload.teacher.name }}
+            </a>
+          </div>
+          <div class="text-muted small mt-1">
+            {{ workload.teacher.position }} &bull; Кафедра: {{ workload.teacher.department }}
+          </div>
+          <div class="mt-2">
+            <span class="badge bg-secondary">
+              Ставка: {{ workload.teacher.rate|floatformat:2 }} ст.
+            </span>
+          </div>
+          <div class="mt-3">
+            <a href="{% url 'teachers:detail' workload.teacher.id %}"
+               class="btn btn-sm btn-outline-primary">
+              Перейти в карточку преподавателя &rarr;
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <h5 class="fw-bold text-secondary">Объем часов по видам</h5>
+        <ul class="list-group list-group-flush border rounded">
+          <li class="list-group-item d-flex justify-content-between">
+            <span>Лекционные занятия:</span>
+            <span class="fw-bold">{{ workload.lectures|floatformat:1 }} ч</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between">
+            <span>Практические занятия:</span>
+            <span class="fw-bold">{{ workload.practices|floatformat:1 }} ч</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between">
+            <span>Лабораторные работы:</span>
+            <span class="fw-bold">{{ workload.labs|floatformat:1 }} ч</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between">
+            <span>Прием зачетов / экзаменов:</span>
+            <span class="fw-bold">{{ workload.exams|floatformat:1 }} ч</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between bg-light fw-bold fs-5 text-primary">
+            <span>Итоговый объем:</span>
+            <span>{{ workload.total_hours|floatformat:1 }} ч</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="card border-danger shadow-sm my-4">
+  <div class="card-header bg-danger text-white fw-bold">
+    Поручение не найдено
+  </div>
+  <div class="card-body py-4">
+    <h4 class="card-title text-danger">Ошибка 404</h4>
+    <p class="card-text text-muted">
+      Учебное поручение с указанным идентификатором не найдено.
+    </p>
+    <a href="{% url 'workloads:list' %}" class="btn btn-primary">
+      Вернуться к списку поручений
+    </a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

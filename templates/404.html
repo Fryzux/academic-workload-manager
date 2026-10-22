@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}404 — Страница не найдена{% endblock %}
+
+{% block content %}
+<div class="card border-danger shadow-sm my-4">
+  <div class="card-header bg-danger text-white fw-bold">
+    Ошибка 404 &bull; Страница не найдена
+  </div>
+  <div class="card-body py-4">
+    <h4 class="card-title text-danger">Запрошенный ресурс не найден</h4>
+    <p class="card-text text-muted">
+      К сожалению, запрашиваемый адрес отсутствует или объект с указанным идентификатором был удален.
+    </p>
+    <div class="mt-4">
+      <a href="{% url 'homepage:index' %}" class="btn btn-primary me-2">На главную</a>
+      <a href="{% url 'teachers:list' %}" class="btn btn-outline-secondary me-2">Преподаватели</a>
+      <a href="{% url 'workloads:list' %}" class="btn btn-outline-secondary">Поручения</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

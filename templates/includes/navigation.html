@@ -1,0 +1,15 @@
+{% load static %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 shadow-sm">
+  <div class="container">
+    <a class="navbar-brand fw-bold d-flex align-items-center" href="{% url 'homepage:index' %}">
+      <img src="{% static 'homepage/img/logo.png' %}" alt="Логотип" class="workload-logo me-2">
+      <span>Учебная нагрузка</span>
+    </a>
+    <div class="navbar-nav ms-auto flex-row gap-3">
+      <a class="nav-link" href="{% url 'homepage:index' %}">Главная</a>
+      <a class="nav-link" href="{% url 'teachers:list' %}">Преподаватели</a>
+      <a class="nav-link" href="{% url 'disciplines:list' %}">Дисциплины</a>
+      <a class="nav-link" href="{% url 'workloads:list' %}">Поручения</a>
+    </div>
+  </div>
+</nav>

@@ -1,0 +1,9 @@
+{% if workload.is_cancelled %}
+  <span class="badge bg-secondary booking-status workload-status workload-status-cancelled">
+    Отменено
+  </span>
+{% else %}
+  <span class="badge bg-success booking-status workload-status workload-status-active">
+    Активно
+  </span>
+{% endif %}

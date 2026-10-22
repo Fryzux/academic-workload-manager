@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Преподаватели кафедры — Учет нагрузки{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h2 class="h3 fw-bold mb-0">Преподаватели кафедры</h2>
+    <p class="text-muted small mb-0">
+      Всего преподавателей: {{ teacher_items|length }}
+    </p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'teachers:add' %}" class="btn btn-primary btn-sm">
+      + Добавить преподавателя
+    </a>
+  </div>
+</div>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <div class="btn-group">
+    <a href="{% url 'teachers:list' %}?compliance=all"
+       class="btn btn-outline-secondary btn-sm {% if comp_filter == 'all' %}active{% endif %}">
+      Все ({{ total_count }})
+    </a>
+    <a href="{% url 'teachers:list' %}?compliance=norm"
+       class="btn btn-outline-success btn-sm {% if comp_filter == 'norm' %}active{% endif %}">
+      В норме ({{ count_norm }})
+    </a>
+    <a href="{% url 'teachers:list' %}?compliance=underload"
+       class="btn btn-outline-warning btn-sm {% if comp_filter == 'underload' %}active{% endif %}">
+      Недогрузка ({{ count_under }})
+    </a>
+    <a href="{% url 'teachers:list' %}?compliance=overload"
+       class="btn btn-outline-danger btn-sm {% if comp_filter == 'overload' %}active{% endif %}">
+      Перегрузка ({{ count_over }})
+    </a>
+  </div>
+
+  <form method="get" action="{% url 'teachers:list' %}" class="d-flex gap-2">
+    <input type="text" name="q" value="{{ query }}"
+           class="form-control form-control-sm"
+           placeholder="Поиск по ФИО или кафедре...">
+    <button type="submit" class="btn btn-primary btn-sm">Найти</button>
+    {% if query or comp_filter != 'all' %}
+      <a href="{% url 'teachers:list' %}" class="btn btn-outline-secondary btn-sm">Сброс</a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="teacher-list">
+  {% for item in teacher_items %}
+    {% include "teachers/includes/teacher_card.html" %}
+  {% empty %}
+    <div class="alert alert-info py-4 text-center">
+      Преподаватели по заданным критериям не найдены.
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

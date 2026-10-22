@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Главная — Учет учебной нагрузки{% endblock %}
+
+{% block content %}
+<div class="p-5 mb-4 bg-white rounded-3 shadow-sm border">
+  <div class="container-fluid py-2">
+    <h1 class="display-6 fw-bold text-primary">
+      Система учета учебной нагрузки преподавателей
+    </h1>
+    <p class="col-md-10 fs-5 text-secondary mt-3">
+      Веб-приложение кафедры для контроля распределения академических часов, анализа выполнения индивидуальных норм и проверки соответствия занимаемым ставкам.
+    </p>
+    <div class="d-flex flex-wrap gap-2 mt-4">
+      <a href="{% url 'teachers:list' %}" class="btn btn-primary btn-lg px-4">
+        Преподаватели
+      </a>
+      <a href="{% url 'disciplines:list' %}" class="btn btn-outline-primary btn-lg px-4">
+        Учебные дисциплины
+      </a>
+      <a href="{% url 'workloads:list' %}" class="btn btn-outline-secondary btn-lg px-4">
+        Учебные поручения
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3 col-6">
+    <div class="metric-card p-3 text-center shadow-sm">
+      <div class="text-muted small">Штат преподавателей</div>
+      <div class="fs-3 fw-bold text-dark">{{ stats.teachers_count }} чел.</div>
+      <div class="small text-muted">Суммарная ставка: {{ stats.total_rate|floatformat:2 }}</div>
+    </div>
+  </div>
+  <div class="col-md-3 col-6">
+    <div class="metric-card p-3 text-center shadow-sm">
+      <div class="text-muted small">Учебных поручений</div>
+      <div class="fs-3 fw-bold text-primary">{{ stats.active_workloads_count }} / {{ stats.workloads_count }}</div>
+      <div class="small text-muted">активных к общему числу</div>
+    </div>
+  </div>
+  <div class="col-md-3 col-6">
+    <div class="metric-card p-3 text-center shadow-sm">
+      <div class="text-muted small">Общий объем часов</div>
+      <div class="fs-3 fw-bold text-success">{{ stats.total_hours|floatformat:1 }} ч</div>
+      <div class="small text-muted">активной нагрузки кафедры</div>
+    </div>
+  </div>
+  <div class="col-md-3 col-6">
+    <div class="metric-card p-3 text-center shadow-sm">
+      <div class="text-muted small">Соблюдение норм</div>
+      <div class="fs-3 fw-bold text-info">{{ stats.norm_count }} из {{ stats.teachers_count }}</div>
+      <div class="small text-muted">в норме (допуск &plusmn;5%)</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-md-6">
+    <div class="card h-100 shadow-sm border-0">
+      <div class="card-header bg-dark text-white fw-bold">
+        Распределение академических часов по видам
+      </div>
+      <div class="card-body">
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item d-flex justify-content-between">
+            <span>Лекционные занятия:</span>
+            <span class="fw-bold">{{ stats.total_lectures|floatformat:1 }} ч</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between">
+            <span>Практические занятия:</span>
+            <span class="fw-bold">{{ stats.total_practices|floatformat:1 }} ч</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between">
+            <span>Лабораторные работы:</span>
+            <span class="fw-bold">{{ stats.total_labs|floatformat:1 }} ч</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between">
+            <span>Прием зачетов / экзаменов:</span>
+            <span class="fw-bold">{{ stats.total_exams|floatformat:1 }} ч</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card h-100 shadow-sm border-0">
+      <div class="card-header bg-dark text-white fw-bold">
+        Состояние индивидуальной нагрузки
+      </div>
+      <div class="card-body d-flex flex-column justify-content-center">
+        <div class="mb-3 d-flex justify-content-between">
+          <span>Соответствуют годовой норме:</span>
+          <span class="badge bg-success fs-6">{{ stats.norm_count }}</span>
+        </div>
+        <div class="mb-3 d-flex justify-content-between">
+          <span>Преподаватели с недогрузкой:</span>
+          <span class="badge bg-warning text-dark fs-6">{{ stats.under_count }}</span>
+        </div>
+        <div class="mb-3 d-flex justify-content-between">
+          <span>Преподаватели с перегрузкой:</span>
+          <span class="badge bg-danger fs-6">{{ stats.over_count }}</span>
+        </div>
+        <div class="mt-2 text-muted small">
+          Базовая норма: 900 часов на полную ставку (1.0). Допустимое отклонение согласно Положению об учебной нагрузке: &plusmn;5%.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

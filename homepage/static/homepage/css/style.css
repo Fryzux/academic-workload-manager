@@ -1,0 +1,56 @@
+/* Собственные стили проекта Academic Workload Manager (ПР6) */
+
+body {
+  min-height: 100vh;
+}
+
+.workload-logo {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+.teacher-card,
+.workload-card,
+.room-card {
+  margin-bottom: 1rem;
+  padding: 1.25rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background-color: #ffffff;
+  transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
+}
+
+.teacher-card:hover,
+.workload-card:hover {
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.booking-status,
+.workload-status {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.workload-status-active {
+  background-color: #198754;
+  color: #ffffff;
+}
+
+.workload-status-cancelled {
+  background-color: #6c757d;
+  color: #ffffff;
+}
+
+.metric-card {
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  transition: transform 0.2s;
+}
+
+.metric-card:hover {
+  transform: translateY(-3px);
+}

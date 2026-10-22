@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Учебные дисциплины — Учет нагрузки{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h2 class="h3 fw-bold mb-0">Учебные предметы и дисциплины</h2>
+    <p class="text-muted small mb-0">
+      Всего дисциплин: {{ disc_items|length }}
+    </p>
+  </div>
+  <a href="{% url 'disciplines:add' %}" class="btn btn-primary btn-sm">
+    + Добавить дисциплину
+  </a>
+</div>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <div class="btn-group">
+    <a href="{% url 'disciplines:list' %}?semester=all"
+       class="btn btn-outline-secondary btn-sm {% if sem_filter == 'all' %}active{% endif %}">
+      Все семестры
+    </a>
+    <a href="{% url 'disciplines:list' %}?semester=1"
+       class="btn btn-outline-secondary btn-sm {% if sem_filter == '1' %}active{% endif %}">
+      1 сем.
+    </a>
+    <a href="{% url 'disciplines:list' %}?semester=2"
+       class="btn btn-outline-secondary btn-sm {% if sem_filter == '2' %}active{% endif %}">
+      2 сем.
+    </a>
+    <a href="{% url 'disciplines:list' %}?semester=3"
+       class="btn btn-outline-secondary btn-sm {% if sem_filter == '3' %}active{% endif %}">
+      3 сем.
+    </a>
+  </div>
+
+  <form method="get" action="{% url 'disciplines:list' %}" class="d-flex gap-2">
+    <input type="text" name="q" value="{{ query }}"
+           class="form-control form-control-sm"
+           placeholder="Поиск по названию или кафедре...">
+    <button type="submit" class="btn btn-primary btn-sm">Найти</button>
+    {% if query or sem_filter != 'all' %}
+      <a href="{% url 'disciplines:list' %}" class="btn btn-outline-secondary btn-sm">Сброс</a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="card shadow-sm border-0">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-dark">
+        <tr>
+          <th class="text-center" style="width: 50px;">ID</th>
+          <th>Наименование дисциплины</th>
+          <th>Закрепляющая кафедра</th>
+          <th class="text-center">Семестр</th>
+          <th class="text-center">Поручений</th>
+          <th class="text-end">Часов</th>
+          <th class="text-center" style="width: 120px;">Действие</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in disc_items %}
+        <tr>
+          <td class="text-center">{{ item.disc.id }}</td>
+          <td>
+            <a href="{% url 'disciplines:detail' item.disc.id %}" class="fw-bold text-decoration-none">
+              {{ item.disc.name|default:"Без названия" }}
+            </a>
+          </td>
+          <td>{{ item.disc.department }}</td>
+          <td class="text-center">
+            <span class="badge bg-secondary">{{ item.disc.semester }} сем.</span>
+          </td>
+          <td class="text-center">{{ item.count }}</td>
+          <td class="text-end fw-bold text-primary">{{ item.hours|floatformat:1 }} ч</td>
+          <td class="text-center">
+            <a href="{% url 'disciplines:detail' item.disc.id %}" class="btn btn-sm btn-outline-primary">
+              Карточка
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="text-center py-4 text-muted">
+            Дисциплины по заданным критериям не найдены.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

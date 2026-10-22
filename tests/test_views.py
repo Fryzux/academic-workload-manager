@@ -185,3 +185,29 @@ def test_disciplines_views_and_add():
     resp_add_get = client.get("/disciplines/add/")
     assert resp_add_get.status_code == 200
     assert "Добавление предмета" in resp_add_get.content.decode("utf-8")
+
+
+def test_templates_and_static_assets_pr6():
+    """Проверка использования DTL шаблонов и статических файлов (ПР6)."""
+    client = Client()
+    response = client.get("/")
+    assert response.status_code == 200
+    content = response.content.decode("utf-8")
+    assert "/static/homepage/css/style.css" in content
+    assert "/static/homepage/js/main.js" in content
+    assert "/static/homepage/img/logo.png" in content
+    assert "current-year" in content
+
+
+def test_template_inheritance_and_filters_pr6():
+    """Проверка наследования base.html и фильтра length в списках (ПР6)."""
+    client = Client()
+    resp_t = client.get("/teachers/")
+    assert resp_t.status_code == 200
+    content_t = resp_t.content.decode("utf-8")
+    assert "Всего преподавателей:" in content_t
+
+    resp_w = client.get("/workloads/")
+    assert resp_w.status_code == 200
+    content_w = resp_w.content.decode("utf-8")
+    assert "Всего поручений в реестре:" in content_w

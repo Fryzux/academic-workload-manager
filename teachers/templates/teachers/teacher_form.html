@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Добавление преподавателя — Учет нагрузки{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7">
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-dark text-white py-3">
+        <h4 class="mb-0 fw-bold">Добавление нового преподавателя</h4>
+      </div>
+      <div class="card-body p-4">
+        {% if error %}
+          <div class="alert alert-danger" role="alert">
+            {{ error }}
+          </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'teachers:add' %}">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label fw-bold">ФИО преподавателя *</label>
+            <input type="text" name="name" class="form-control"
+                   placeholder="Например: Иванов Петр Сергеевич"
+                   value="{{ name }}" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold">Должность *</label>
+            <input type="text" name="position" class="form-control"
+                   value="{{ position }}" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold">Кафедра *</label>
+            <input type="text" name="department" class="form-control"
+                   value="{{ department }}" required>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-bold">Ставка по договору (0.1 .. 2.0) *</label>
+            <input type="number" step="0.05" min="0.1" max="2.0" name="rate"
+                   class="form-control" value="{{ rate_str }}" required>
+            <div class="form-text">
+              1.0 — полная ставка (норма 900 ч/год).
+            </div>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+            <a href="{% url 'teachers:list' %}" class="btn btn-outline-secondary">Отмена</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
